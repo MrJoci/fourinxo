@@ -31,15 +31,20 @@ public class StartNewGame extends Activity implements OnTouchListener{
 	float szm = 50;
 	int szegX = 8;
 	int szegY = 12;
-	int eltolas = 87; //eltolasY
+	int eltolas = 87; //eltolasY-
 	int eltolasX = 8;
 	int jatekos = 1;
 	int[] jatekosSzin = {0x00000000, 0xAA00FF00, 0xAA0000FF};
 	int jatekosElsoSzin = 0xAA00FF00;
 	int jatekosMasodSzin = 0xAA0000FF;
 	int[][] nyomva = new int[8][13];
+	int[][] nyomvaJel = new int[8][13];
 	int nyert = 0;
 	int[] lastRakas = new int[3];
+	
+	int whichX = 0;
+	int whichO = 0;
+	int jelekSzama = 10;
 	
 	float width_multiplier = 1f;
 	float height_multiplier = 1f;	
@@ -66,6 +71,7 @@ public class StartNewGame extends Activity implements OnTouchListener{
 		for (int i = 0; i < szegX; i++) {
 			for (int j = 0; j < szegY; j++) {
 				nyomva[i][j] = 0;
+				nyomvaJel[i][j] = 0;
 			}
 		}
 	}
@@ -116,7 +122,7 @@ public class StartNewGame extends Activity implements OnTouchListener{
 			return kanvas;
 		}
 		
-		public void negyzetKep(Canvas kanvas, Paint paint, Bitmap korJel[], Bitmap xJel[]){
+		public void negyzetKep(Canvas kanvas, Paint paint, Bitmap korJel[], Bitmap xJel[], Bitmap lastStepMarker){
 			float kepszelx = 45f*width_multiplier + 15f*width_multiplier;
 			float kepszely = 45f*height_multiplier + 14.5f*height_multiplier;
 			float ikonsizeX = 50f*width_multiplier;
@@ -124,7 +130,7 @@ public class StartNewGame extends Activity implements OnTouchListener{
 			
 			float relEltolasX = (float)eltolasX;//*width_multiplier;
 			float relEltolasY = (float)eltolas;//*height_multiplier;
-			
+						
 			
 			for (float i = 0; i < szegX; i++) {
 				for (float j = 0; j < szegY; j++) {
@@ -152,29 +158,27 @@ public class StartNewGame extends Activity implements OnTouchListener{
 					if (nyomva[(int)i][(int)j]>0) {
 						if (nyomva[(int)i][(int)j]==1) {
 							//kanvas.drawBitmap(xJel[1], i*xm+7, j*szm+eltolas+7, paint);
-							kanvas.drawBitmap(xJel[1], null, csempe, null);		
+							kanvas.drawBitmap(xJel[nyomvaJel[(int)i][(int)j]], null, csempe, null);
 						}
 						else {
 							//kanvas.drawBitmap(korJel[1], i*xm+7, j*szm+eltolas+7, paint);	
-							kanvas.drawBitmap(korJel[1], null, csempe, null);	
+							kanvas.drawBitmap(korJel[nyomvaJel[(int)i][(int)j]], null, csempe, null);
 						}
 					}					
 					
 					
 				}
 			}
+			
+			//az utolsó lépés megjelölése 
 			if (nyomva.length > 0){
 				float xcord = (float)lastRakas[0]*kepszelx+relEltolasX;
 				float ycord = (float)lastRakas[1]*kepszely+relEltolasY;
 				Rect csempe = new Rect();
 				csempe.set((int)xcord, (int)ycord, (int)(xcord+ikonsizeX), (int)(ycord+ikonsizeY));
-				if(lastRakas[2] == 1){
-					kanvas.drawBitmap(xJel[0], null, csempe, null);					
-				}
-				else{	
-					kanvas.drawBitmap(korJel[0], null, csempe, null);		
-				}			
+					kanvas.drawBitmap(lastStepMarker, null, csempe, null);	
 			}
+			
 //			float xcord = lastRakas[0]*szm+7;
 //			float ycord = lastRakas[1]*szm+eltolas+7;
 //			Rect csempe = new Rect();
@@ -195,9 +199,9 @@ public class StartNewGame extends Activity implements OnTouchListener{
 				
 				try {
 					Bitmap lap;
-					int jelekSzama = 2;
 					Bitmap korJel[] = new Bitmap[jelekSzama];
 					Bitmap xJel[] = new Bitmap[jelekSzama];
+					Bitmap lastStepMarker;
 					Canvas kanvas = feluletTarto.lockCanvas();
 					
 					if (screen_width==0){
@@ -224,8 +228,8 @@ public class StartNewGame extends Activity implements OnTouchListener{
 					inputStream.close();
 
 					for (int i = 0; i < jelekSzama; i++) {
-						InputStream inputX = kepTolto.open("x/x_" + Integer.toString(i) + ".jpg");
-						InputStream inputKor = kepTolto.open("k/k_" + Integer.toString(i) + ".jpg");
+						InputStream inputX = kepTolto.open("x/x" + Integer.toString(i) + ".jpg");
+						InputStream inputKor = kepTolto.open("k/k" + Integer.toString(i) + ".jpg");
 
 						xJel[i] = BitmapFactory.decodeStream(inputX);
 						korJel[i] = BitmapFactory.decodeStream(inputKor);
@@ -233,6 +237,9 @@ public class StartNewGame extends Activity implements OnTouchListener{
 						inputX.close();
 						inputKor.close();
 					}
+					InputStream inputLastStep = kepTolto.open("ucsolepes.png");
+					lastStepMarker = BitmapFactory.decodeStream(inputLastStep);
+					inputLastStep.close();
 					
 					kanvas.drawRGB(255, 255, 255);
 					Paint paint = new Paint();
@@ -242,7 +249,7 @@ public class StartNewGame extends Activity implements OnTouchListener{
 					kanvas.drawBitmap(lap, null, dst, null);
 //					kanvas = halo(kanvas, paint);
 //					kanvas = negyzet(kanvas, paint);
-					negyzetKep(kanvas, paint, korJel, xJel);
+					negyzetKep(kanvas, paint, korJel, xJel, lastStepMarker);
 	
 					paint.setColor(0xFF000000);
 					paint.setTextSize(textSize);
@@ -346,6 +353,28 @@ public class StartNewGame extends Activity implements OnTouchListener{
 					if (j*CellHeight+eltolas < y && y < (j+1)*CellHeight+eltolas) {
 						if(nyomva[(int)i][(int)j]>0) continue;
 						nyomva[(int)i][(int)j] = jatekos;
+						
+						if(jatekos==1)
+						{
+							nyomvaJel[(int)i][(int)j]=whichX;
+							if(whichX < jelekSzama-1){
+								whichX++;						
+							}			
+							else{
+								whichX=0;
+							}
+						}
+						else
+						{
+							nyomvaJel[(int)i][(int)j]=whichO;	
+							if(whichO < jelekSzama-1){
+								whichO++;						
+							}			
+							else{
+								whichO=0;
+							}						
+						}
+						
 						lastRakas[0]=(int)i;
 						lastRakas[1]=(int)j;
 						lastRakas[2]=jatekos;
